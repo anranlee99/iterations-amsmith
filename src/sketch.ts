@@ -4,19 +4,16 @@ class FixedPointBuffer {
     private gfx: p5.Graphics;
 
     constructor(p: p5, w: number, h: number) {
-        // Ensure the graphics buffer is compatible with WebGL
-        this.gfx = p.createGraphics(w, h, p.WEBGL);
-        this.gfx.noStroke();
+        this.gfx = p.createGraphics(w, h, p.webglVersion === '1' ? p.WEBGL : p.P2D);
     }
 
     public background(r: number, g: number, b: number): void {
         this.gfx.background(r, g, b);
     }
 
-    public add(x: number, y: number, r: number, g: number, b: number): void {
-
-        // Directly draw onto the graphics object
-        this.gfx.fill(r, g, b);
+    public add(x: number, y: number, r: number, g: number, b: number, a: number): void {
+        this.gfx.fill(r, g, b, a);
+        this.gfx.noStroke();
         this.gfx.ellipse(x, y, 1, 1); // Draw a small ellipse as a point
     }
 
@@ -32,14 +29,13 @@ new p5((p: p5) => {
     const niters = 16;
 
     let pa: number, pb: number, pc: number, pd: number;
+    let mya: number = 255; // Adjust alpha for visibility
 
     p.setup = () => {
         p.createCanvas(window.innerWidth, window.innerHeight, p.WEBGL);
         buf = new FixedPointBuffer(p, p.width, p.height);
-        // Adjust for WEBGL's center origin
-        cx = 0;
-        cy = 0;
-        // Adjust scale factor if necessary
+        cx = p.width / 2;
+        cy = p.height / 2;
         sc = p.width / (2 * Math.PI);
         next();
     };
@@ -60,11 +56,9 @@ new p5((p: p5) => {
 
     p.draw = () => {
         drawIntoBuffer();
-        // Draw the off-screen buffer at the center of the canvas
-        p.image(buf.getGraphics(), -buf.getGraphics().width / 2, -buf.getGraphics().height / 2);
-        p.noLoop(); // To pause the loop for observation. Adjust as needed.
+        p.image(buf.getGraphics(), -p.width / 2, -p.height / 2); // Center the buffer on the canvas
+        p.noLoop(); // To pause the loop for observation
     };
-    
 
     function drawIntoBuffer(): void {
         const s = Math.ceil(Math.sqrt(ncps));
@@ -75,12 +69,14 @@ new p5((p: p5) => {
 
             for (let j = 0; j < niters; j++) {
                 const t = j / niters;
-                const xp = Math.sin(pa * x) + Math.sin(pb * y);
-                const yp = Math.sin(pc * x) + Math.sin(pd * y);
-                const r = Math.round((1 - t) * 255);
-                const g = Math.round(2 * t * (1 - t) * 255);
-                const b = Math.round(t * 255);
-                buf.add(cx + xp * sc, cy + yp * sc, r, g, b);
+                let xp = p.sin(pa * x) + p.sin(pb * y);
+                let yp = p.sin(pc * x) + p.sin(pd * y);
+
+                const r = Math.floor((1 - t) * 255); // Red decreases with t
+                const g = Math.floor(2 * t * (1 - t) * 255); // Green peaks in the middle
+                const b = Math.floor(t * 255); // Blue increases with t
+
+                buf.add(cx + xp * sc, cy + yp * sc, r, g, b, mya); // Apply alpha scaling
             }
         }
     }
