@@ -2,7 +2,7 @@
 
 
 ### About
-This is a template to use a [p5.js](https://github.com/processing/p5.js) canvas in a project with Typescript and Vite. 
+This is a [template](https://github.com/anranlee99/p5-TS-Vite-template) to use a [p5.js](https://github.com/processing/p5.js) canvas in a project with Typescript and Vite. 
 
 ### Usage
 Clone this repo and run 
